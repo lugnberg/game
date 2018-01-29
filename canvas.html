@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title> game canvas </title>
+  <style>
+    * { padding: 0; margin-top: 400;}
+    canvas { background: #eee; display: block; margin: 0 auto; }
+  </style>
+</head>
+<body>
+
+<canvas id="myCanvas" width="480" height="320"></canvas>
+
+<script>
+  var canvas = document.getElementById('myCanvas');
+  var ctx = canvas.getContext("2d");
+  var x = canvas.width/2;
+  var y = canvas.height - 30;
+  var dx = 2;
+  var dy = -2;
+  var ballRadius = 20;
+
+  var paddleHeight = 10;
+  var paddleWidth = 75;
+  var paddleX = (canvas.width-paddleWidth)/2;
+  var rightPressed = false;
+  var leftPressed = false;
+
+  var detectX = canvas.width/2;
+  var detectY = 30;
+  var detectDX = 0;
+  var detectDyY = 0;
+  var detectorBallRadius = 10;
+  var detectionRadius = 40;
+  var detected = false;
+
+  var distance;
+  var dxCenters;
+  var dyCenters;
+  var direction;
+  var dirX = 0;
+  var dirY = 0;
+
+  function resetVariables(){
+    x = canvas.width/2;
+    y = canvas.height - 30;
+    dx = 2;
+    dy = -2;
+    ballRadius = 20;
+
+    paddleHeight = 10;
+    paddleWidth = 75;
+    paddleX = (canvas.width-paddleWidth)/2;
+    rightPressed = false;
+    leftPressed = false;
+
+    detectX = canvas.width/2;
+    detectY = 30;
+    detectDX = 0;
+    detectDyY = 0;
+    detectorBallRadius = 10;
+    detectionRadius = 40;
+    detected = false;
+
+    distance;
+    dxCenters;
+    dyCenters;
+    direction;
+    dirX = 0;
+    dirY = 0;
+  }
+
+  document.addEventListener("keydown", keyDownHandler, false);
+  document.addEventListener("keyup", keyUpHandler, false);
+
+  function keyDownHandler(e) {
+    if(e.keyCode == 39) {
+        rightPressed = true;
+    }
+    else if(e.keyCode == 37) {
+        leftPressed = true;
+    }
+}
+
+function keyUpHandler(e) {
+    if(e.keyCode == 39) {
+        rightPressed = false;
+    }
+    else if(e.keyCode == 37) {
+        leftPressed = false;
+    }
+}
+
+  function drawBall() {
+    ctx.beginPath();
+    ctx.arc(x, y, ballRadius, 0, Math.PI*2);
+    ctx.fillStyle = "pink";
+    ctx.fill();
+    ctx.closePath();
+}
+
+function drawPaddle() {
+    ctx.beginPath();
+    ctx.rect(paddleX, canvas.height-paddleHeight, paddleWidth, paddleHeight);
+    ctx.fillStyle = "orange";
+    ctx.fill();
+    ctx.closePath();
+}
+
+function drawDetector(){
+  ctx.beginPath();
+  ctx.arc(detectX, detectY, detectorBallRadius, 0, Math.PI*2);
+  ctx.fillStyle = "green";
+  ctx.fill();
+  ctx.closePath();
+
+  ctx.beginPath();
+  ctx.arc(detectX, detectY, detectorBallRadius+detectionRadius, 0, Math.PI*2);
+  ctx.strokeStyle = "grey";
+  ctx.stroke();
+  ctx.closePath();
+}
+
+function drawDetected(){
+  ctx.beginPath();
+  ctx.arc(detectX, detectY, detectorBallRadius, 0, Math.PI*2);
+  ctx.fillStyle = "green";
+  ctx.fill();
+  ctx.closePath();
+
+  ctx.beginPath();
+  ctx.arc(detectX, detectY, detectorBallRadius+detectionRadius, 0, Math.PI*2);
+  ctx.strokeStyle = "red";
+  ctx.stroke();
+  ctx.closePath();
+}
+
+
+function draw() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    drawBall();
+    if(detected){
+      drawDetected();
+    } else {
+      drawDetector();
+    }
+    //drawPaddle();
+
+    //ball movement
+    if(y + dy < 0+ballRadius || y + dy > myCanvas.height-ballRadius){
+      dy = -dy;
+    }
+
+    if(x + dx < 0+ballRadius || x + dx > myCanvas.width-ballRadius){
+      dx = -dx;
+    }
+
+    x += dx;
+    y += dy;
+
+    //paddle movement
+    if(rightPressed && canvas.width-paddleWidth > paddleX) {
+      paddleX += 7;
+    } else if (leftPressed && 0 < paddleX) {
+      paddleX -= 7;
+    }
+
+    // detector
+    detect();
+}
+
+function detect(){
+  dxCenters = Math.abs(x-detectX);
+  dyCenters = Math.abs(y-detectY);
+
+  distance = Math.sqrt(Math.pow(dxCenters, 2) + Math.pow(dyCenters, 2));
+  if(distance - ballRadius - detectionRadius <= 0){
+    detected = true;
+    follow();
+  } else {
+    detected = false;
+  }
+  // collision - target caught
+  if(distance - ballRadius - detectorBallRadius < 0){
+    alert("GAME OVER");
+    document.location.reload();
+    resetVariables();
+    }
+}
+
+function follow() {
+  if(detected){
+      fancyFollowingFunction();
+  }
+}
+
+  function fancyFollowingFunction(){
+    // calc how far to "follow" in x- resp. y-direction
+    dirX = Math.ceil((dxCenters/distance));
+    dirY = Math.ceil((dyCenters/distance));
+
+    // decide which side the target is of the detector
+    if(detectX>x){
+        detectX -= dirX;
+    } else {
+      detectX += dirX;
+    }
+    if(detectY>y){
+        detectY -= dirY;
+    } else {
+      detectY += dirY;
+    }
+  }
+
+  setInterval(draw, 10);
+
+</script>
+
+</body>
+
+</html>
