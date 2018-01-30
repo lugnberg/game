@@ -26,6 +26,10 @@
   var paddleX = (canvas.width-paddleWidth)/2;
   var rightPressed = false;
   var leftPressed = false;
+  var upPressed = false;
+  var downPressed = false;
+  var spacePressed = false;
+
 
   var detectX = canvas.width/2;
   var detectY = 30;
@@ -42,6 +46,8 @@
   var dirX = 0;
   var dirY = 0;
 
+  var gameOver = false;
+
   function resetVariables(){
     x = canvas.width/2;
     y = canvas.height - 30;
@@ -54,6 +60,9 @@
     paddleX = (canvas.width-paddleWidth)/2;
     rightPressed = false;
     leftPressed = false;
+    upPressed = false;
+    downPressed = false;
+    spacePressed = false;
 
     detectX = canvas.width/2;
     detectY = 30;
@@ -63,12 +72,10 @@
     detectionRadius = 40;
     detected = false;
 
-    distance;
-    dxCenters;
-    dyCenters;
-    direction;
     dirX = 0;
     dirY = 0;
+
+    gameOver = false;
   }
 
   document.addEventListener("keydown", keyDownHandler, false);
@@ -81,6 +88,15 @@
     else if(e.keyCode == 37) {
         leftPressed = true;
     }
+    else if(e.keyCode == 38) {
+        upPressed = true;
+    }
+    else if(e.keyCode == 40) {
+        downPressed = true;
+    }
+    else if(e.keyCode == 32) {
+        spacePressed = true;
+    }
 }
 
 function keyUpHandler(e) {
@@ -89,6 +105,15 @@ function keyUpHandler(e) {
     }
     else if(e.keyCode == 37) {
         leftPressed = false;
+    }
+    else if(e.keyCode == 38) {
+        upPressed = false;
+    }
+    else if(e.keyCode == 40) {
+        downPressed = false;
+    }
+    else if(e.keyCode == 32) {
+        spacePressed = false;
     }
 }
 
@@ -100,14 +125,6 @@ function keyUpHandler(e) {
     ctx.closePath();
 }
 
-function drawPaddle() {
-    ctx.beginPath();
-    ctx.rect(paddleX, canvas.height-paddleHeight, paddleWidth, paddleHeight);
-    ctx.fillStyle = "orange";
-    ctx.fill();
-    ctx.closePath();
-}
-
 function drawDetector(){
   ctx.beginPath();
   ctx.arc(detectX, detectY, detectorBallRadius, 0, Math.PI*2);
@@ -115,11 +132,13 @@ function drawDetector(){
   ctx.fill();
   ctx.closePath();
 
+/** detector circle is shown in grey while detecting
   ctx.beginPath();
   ctx.arc(detectX, detectY, detectorBallRadius+detectionRadius, 0, Math.PI*2);
   ctx.strokeStyle = "grey";
   ctx.stroke();
   ctx.closePath();
+  */
 }
 
 function drawDetected(){
@@ -129,13 +148,13 @@ function drawDetected(){
   ctx.fill();
   ctx.closePath();
 
-  ctx.beginPath();
+/** detector circle glowing red if an object is detected
   ctx.arc(detectX, detectY, detectorBallRadius+detectionRadius, 0, Math.PI*2);
   ctx.strokeStyle = "red";
   ctx.stroke();
   ctx.closePath();
+  */
 }
-
 
 function draw() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -143,31 +162,39 @@ function draw() {
     if(detected){
       drawDetected();
     } else {
+      autoBallMovement();
       drawDetector();
     }
-    //drawPaddle();
 
-    //ball movement
-    if(y + dy < 0+ballRadius || y + dy > myCanvas.height-ballRadius){
-      dy = -dy;
+    /** player ball movement */
+    if(rightPressed && canvas.width-ballRadius > x) {
+      x += 2;
     }
-
-    if(x + dx < 0+ballRadius || x + dx > myCanvas.width-ballRadius){
-      dx = -dx;
+    if (leftPressed && 0+ballRadius < x) {
+      x -= 2;
     }
-
-    x += dx;
-    y += dy;
-
-    //paddle movement
-    if(rightPressed && canvas.width-paddleWidth > paddleX) {
-      paddleX += 7;
-    } else if (leftPressed && 0 < paddleX) {
-      paddleX -= 7;
+    if (upPressed && 0+ballRadius < y) {
+      y -= 2;
+    }
+    if (downPressed && canvas.height-ballRadius > y) {
+      y += 2;
     }
 
     // detector
     detect();
+}
+
+function autoBallMovement(){
+  if(detectY + dy < 0+detectorBallRadius || detectY + dy > myCanvas.height-detectorBallRadius){
+    dy = -(dy*Math.random());
+  }
+
+  if(detectX + dx < 0+detectorBallRadius || detectX + dx > myCanvas.width-detectorBallRadius){
+    dx = -(dx*Math.random());
+  }
+
+  detectX += dx;
+  detectY += dy;
 }
 
 function detect(){
@@ -183,11 +210,33 @@ function detect(){
   }
   // collision - target caught
   if(distance - ballRadius - detectorBallRadius < 0){
-    alert("GAME OVER");
-    document.location.reload();
-    resetVariables();
+    gameOver=true;
+
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.beginPath();
+    ctx.font = "30px Arial";
+    ctx.strokeStyle = "pink";
+    ctx.strokeText("game over", (canvas.width/2), canvas.height/2);
+    ctx.font = "12px Arial";
+    ctx.strokeText("press space", (canvas.width/2), (canvas.height/2)+30);
+    ctx.closePath();
+
+
+
     }
 }
+
+  if(gameOver){
+    while(gameOver){
+      if(spacePressed && gameOver){
+        gameOver=false;
+        alert("space");
+      }
+    }
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    document.location.reload();
+    resetVariables();
+  }
 
 function follow() {
   if(detected){
@@ -203,13 +252,18 @@ function follow() {
     // decide which side the target is of the detector
     if(detectX>x){
         detectX -= dirX;
+        dx = +dx;
     } else {
       detectX += dirX;
+      dx = -dx;
     }
     if(detectY>y){
         detectY -= dirY;
+        dy = +dy;
+
     } else {
       detectY += dirY;
+      dy = -dy;
     }
   }
 
