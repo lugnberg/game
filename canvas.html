@@ -21,15 +21,11 @@
   var dy = -2;
   var ballRadius = 20;
 
-  var paddleHeight = 10;
-  var paddleWidth = 75;
-  var paddleX = (canvas.width-paddleWidth)/2;
   var rightPressed = false;
   var leftPressed = false;
   var upPressed = false;
   var downPressed = false;
   var spacePressed = false;
-
 
   var detectX = canvas.width/2;
   var detectY = 30;
@@ -43,10 +39,16 @@
   var dxCenters;
   var dyCenters;
   var direction;
-  var dirX = 0;
-  var dirY = 0;
 
   var gameOver = false;
+
+  var followDX;
+  var followDY;
+  var angle1 = 0.0;
+
+  var bounce = true;
+  var lostX = 0;
+  var lostY = 0;
 
   function resetVariables(){
     x = canvas.width/2;
@@ -55,9 +57,6 @@
     dy = -2;
     ballRadius = 20;
 
-    paddleHeight = 10;
-    paddleWidth = 75;
-    paddleX = (canvas.width-paddleWidth)/2;
     rightPressed = false;
     leftPressed = false;
     upPressed = false;
@@ -72,8 +71,9 @@
     detectionRadius = 40;
     detected = false;
 
-    dirX = 0;
-    dirY = 0;
+    bounce = true;
+    lostX = 0;
+    lostY = 0;
 
     gameOver = false;
   }
@@ -161,6 +161,7 @@ function draw() {
     drawBall();
     if(detected){
       drawDetected();
+      bounce = false;
     } else {
       autoBallMovement();
       drawDetector();
@@ -170,31 +171,46 @@ function draw() {
     if(rightPressed && canvas.width-ballRadius > x) {
       x += 2;
     }
-    if (leftPressed && 0+ballRadius < x) {
+    if(leftPressed && 0+ballRadius < x) {
       x -= 2;
     }
-    if (upPressed && 0+ballRadius < y) {
+    if(upPressed && 0+ballRadius < y) {
       y -= 2;
     }
-    if (downPressed && canvas.height-ballRadius > y) {
+    if(downPressed && canvas.height-ballRadius > y) {
       y += 2;
     }
-
     // detector
     detect();
 }
 
 function autoBallMovement(){
-  if(detectY + dy < 0+detectorBallRadius || detectY + dy > myCanvas.height-detectorBallRadius){
-    dy = -(dy*Math.random());
+  if(!bounce){
+    detectX += lostX;
+    detectY += lostY;
+  } else {
+    detectX += dx;
+    detectY += dy;
+  }
+  if(detectY + dy < 0 + detectorBallRadius || detectY + dy > myCanvas.height-detectorBallRadius){
+    if(!bounce){
+      dx = lostX;
+      dy = -(lostY);
+      bounce = true;
+    } else {
+      dy = -(dy);
+    }
+  }
+  if(detectX + dx < 0 + detectorBallRadius || detectX + dx > myCanvas.width-detectorBallRadius){
+    if(!bounce){
+      dx = -(lostX);
+      dy = lostY;
+      bounce = true;
+    } else {
+      dx = -(dx);
+    }
   }
 
-  if(detectX + dx < 0+detectorBallRadius || detectX + dx > myCanvas.width-detectorBallRadius){
-    dx = -(dx*Math.random());
-  }
-
-  detectX += dx;
-  detectY += dy;
 }
 
 function detect(){
@@ -204,28 +220,23 @@ function detect(){
   distance = Math.sqrt(Math.pow(dxCenters, 2) + Math.pow(dyCenters, 2));
   if(distance - ballRadius - detectionRadius <= 0){
     detected = true;
-    follow();
+    fancyFollowingFunction();
   } else {
     detected = false;
   }
   // collision - target caught
   if(distance - ballRadius - detectorBallRadius < 0){
     gameOver=true;
-
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     ctx.beginPath();
     ctx.font = "30px Arial";
     ctx.strokeStyle = "pink";
     ctx.strokeText("game over", (canvas.width/2), canvas.height/2);
-    ctx.font = "12px Arial";
-    ctx.strokeText("press space", (canvas.width/2), (canvas.height/2)+30);
+    ctx.font = "18px Arial";
+    ctx.strokeText("press cmd + r", (canvas.width/2), (canvas.height/2)+30);
     ctx.closePath();
-
-
-
     }
 }
-
   if(gameOver){
     while(gameOver){
       if(spacePressed && gameOver){
@@ -238,33 +249,16 @@ function detect(){
     resetVariables();
   }
 
-function follow() {
-  if(detected){
-      fancyFollowingFunction();
-  }
-}
-
   function fancyFollowingFunction(){
-    // calc how far to "follow" in x- resp. y-direction
-    dirX = Math.ceil((dxCenters/distance));
-    dirY = Math.ceil((dyCenters/distance));
-
-    // decide which side the target is of the detector
-    if(detectX>x){
-        detectX -= dirX;
-        dx = +dx;
-    } else {
-      detectX += dirX;
-      dx = -dx;
-    }
-    if(detectY>y){
-        detectY -= dirY;
-        dy = +dy;
-
-    } else {
-      detectY += dirY;
-      dy = -dy;
-    }
+    /** improved follow function with inspiration from Keith Peters*/
+    followDX = x - detectX;
+    followDY = y - detectY;
+    hyp = Math.sqrt(Math.pow(followDX, 2) + Math.pow(followDY, 2));
+    angle1 = Math.atan2(followDY, followDX);
+    lostX = Math.cos(angle1)*2;
+    lostY = Math.sin(angle1)*2;
+    detectX += lostX;
+    detectY += lostY;
   }
 
   setInterval(draw, 10);
