@@ -1,13 +1,11 @@
 //the actual game file
 
 // preloads all its content before setup gets to run
-var charImg;
+var charImg = document.createElement('charImg');
 var monster;
 function preload() {
   charImg = loadImage('js/char.png');
 }
-
-
 
 function setup() {
   var screenWidth = window.innerWidth;
@@ -29,8 +27,8 @@ fill(255);
 }
 ellipse(mouseX, mouseY, 20, 20);*/
   if (mouseIsPressed) {
-    monster.setX(mouseX);
-    monster.setY(mouseY);
+    monster.setX(mouseX - (50/2)); // should be img width/2
+    monster.setY(mouseY - (45/2));
     background('#fce262');
     monster.dispImg();
   }
